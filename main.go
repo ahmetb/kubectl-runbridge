@@ -123,6 +123,9 @@ func reverseProxy(w http.ResponseWriter, r *http.Request) {
 			strings.Contains(r.Header.Get("accept"),";as=Table"){
 			tableHandler(w, resp.Body)
 			return
+		} else if r.Method == http.MethodDelete &&  resp.StatusCode == http.StatusOK {
+			fixDeleteResponse(w,resp.Body)
+			return
 		}
 		io.Copy(w, resp.Body)
 	}
@@ -162,4 +165,12 @@ func writeAPIError(w http.ResponseWriter, code int, message string) {
 	w.Header().Set("content-type", "application/json")
 	w.WriteHeader(code)
 	json.NewEncoder(w).Encode(v)
+}
+
+func fixDeleteResponse(w http.ResponseWriter, r io.Reader){
+	var v map[string]interface{}
+	_ = json.NewDecoder(r).Decode(&v)
+	v["kind"] = "Status"
+	v["apiVersion"] = "v1"
+	_ = json.NewEncoder(w).Encode(v)
 }
