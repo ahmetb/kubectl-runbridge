@@ -1,16 +1,19 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"os"
-	"os/exec"
 	"strings"
 
 	"github.com/gorilla/mux"
+	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/google"
+	"google.golang.org/api/run/v1"
 )
 
 var (
@@ -18,17 +21,29 @@ var (
 	discoveryDocs = map[string]string{
 		"":                               "discovery/apis.json",
 		"/serving.knative.dev/v1":        "discovery/api-serving.json",
-		"/domains.cloudrun.com/v1alpha1": "discovery/api-domains.json",
+		"/domains.cloudrun.com/v1": "discovery/api-domains.json",
 	}
 )
 
+var (
+	tokenSource oauth2.TokenSource
+)
+
 func main() {
+	ts, err := google.DefaultTokenSource(context.TODO(), run.CloudPlatformScope)
+	if err != nil {
+		log.Printf(`Google Credentials not found: Make sure you ran "gcloud auth application-default login" first. error: %v`, err)
+		os.Exit(1)
+	}
+	tokenSource = ts
+
+
 	r := mux.NewRouter()
 	r.HandleFunc("/{region}/api/v1", baseAPIv1).Methods(http.MethodGet, http.MethodHead)
 	r.HandleFunc("/{region}/apis", discovery).Methods(http.MethodGet, http.MethodHead)
 	r.HandleFunc("/{region}/apis/{apiGroup}/{apiVersion}", discovery).Methods(http.MethodGet, http.MethodHead)
 	r.HandleFunc("/{region}/apis/{apiGroup}/{apiVersion}/namespaces/{ns}/{resource:.*}", reverseProxy)
-	fmt.Println("starting polyfill kube-apiserver for Cloud Run")
+	fmt.Println("starting fake kube-apiserver for Cloud Run")
 	http.Handle("/", r)
 	log.Fatal(http.ListenAndServe("localhost:5555", nil))
 }
@@ -120,11 +135,11 @@ func reverseProxy(w http.ResponseWriter, r *http.Request) {
 		// handle Table responses
 		if resp.StatusCode == http.StatusOK &&
 			strings.Contains(path, "/services") &&
-			strings.Contains(r.Header.Get("accept"),";as=Table"){
+			strings.Contains(r.Header.Get("accept"), ";as=Table") {
 			tableHandler(w, resp.Body)
 			return
-		} else if r.Method == http.MethodDelete &&  resp.StatusCode == http.StatusOK {
-			fixDeleteResponse(w,resp.Body)
+		} else if r.Method == http.MethodDelete && resp.StatusCode == http.StatusOK {
+			fixDeleteResponse(w, resp.Body)
 			return
 		}
 		io.Copy(w, resp.Body)
@@ -132,9 +147,11 @@ func reverseProxy(w http.ResponseWriter, r *http.Request) {
 }
 
 func getAccessToken() (string, error) {
-	cmd := exec.Command("gcloud", "auth", "print-access-token", "-q")
-	b, err := cmd.Output()
-	return strings.TrimSuffix(string(b), "\n"), err
+	tok, err := tokenSource.Token()
+	if err != nil {
+		return "", fmt.Errorf("failed to get a token from Google: %w", err)
+	}
+	return tok.AccessToken, nil
 }
 
 type KubernetesAPIError struct {
@@ -167,7 +184,7 @@ func writeAPIError(w http.ResponseWriter, code int, message string) {
 	json.NewEncoder(w).Encode(v)
 }
 
-func fixDeleteResponse(w http.ResponseWriter, r io.Reader){
+func fixDeleteResponse(w http.ResponseWriter, r io.Reader) {
 	var v map[string]interface{}
 	_ = json.NewDecoder(r).Decode(&v)
 	v["kind"] = "Status"

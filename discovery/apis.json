@@ -19,13 +19,13 @@
         "name": "domains.cloudrun.com",
         "versions": [
           {
-            "groupVersion": "domains.cloudrun.com/v1alpha1",
-            "version": "v1alpha1"
+            "groupVersion": "domains.cloudrun.com/v1",
+            "version": "v1"
           }
         ],
         "preferredVersion": {
-          "groupVersion": "domains.cloudrun.com/v1alpha1",
-          "version": "v1alpha1"
+          "groupVersion": "domains.cloudrun.com/v1",
+          "version": "v1"
         }
       }
     ]
