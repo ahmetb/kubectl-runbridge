@@ -1,5 +1,7 @@
 # kubectl bridge for Cloud Run
 
+> :warning: :warning: This project is under heavy development.
+
 This is a small binary that offers Cloud Run functionality (as Knative APIs)
 using `kubectl`.
 
@@ -8,6 +10,30 @@ Start a local server at port `5555`:
 ```sh
 go run .
 ```
+
+## Support Table/Roadmap
+
+- [x] `kubectl` Discovery API (`/api`, `/apis`, `/apis/serving.knative.dev/v1` etc)
+- [x] Listing/getting resources with `kubectl get`
+- Server-side "table" printing for `kubectl get`
+    - [x] KService 
+    - [ ] Configuration
+    - [ ] Route
+    - [ ] Revision
+    - [ ] DomainMapping
+- [x] Deleting resources with `kubectl gelete`
+- Updating resources
+  - [ ] `kubectl edit`  (json merge patch not yet supported)
+  - [ ] `kubectl apply` (json merge patch not yet supported)
+  - [ ] `kubectl patch` (json merge patch not yet supported)
+- [ ] `--watch` (probably will never be supported)
+- [ ] `--all-namespaces` while querying resources (would query all regions)
+
+Roadmap:
+
+- [ ] generating `KUBECONFIG` files automatically
+- [ ] showing Cloud Run regions as "Kubernetes namespaces"
+- [ ] configuring a "GCP project" using command-line option
 
 ## Examples
 
