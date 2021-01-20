@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -75,8 +76,10 @@ func reverseProxy(w http.ResponseWriter, r *http.Request) {
 	path := pathWithoutRegionPrefix(r) // e.g. /apis/serving.knative.dev/v1/namespaces/ahmetb-demo/services/foo
 	region := mux.Vars(r)["region"]
 
-	fmt.Println(region)
-	fmt.Println(path)
+	if r.URL.Query().Get("watch") != "" {
+		writeAPIError(w, http.StatusBadRequest, "--watch not supported")
+		return
+	}
 
 	tok, err := getAccessToken()
 	if err != nil {
@@ -93,7 +96,8 @@ func reverseProxy(w http.ResponseWriter, r *http.Request) {
 	r.Host = endpoint
 	r.RemoteAddr = ""
 	r.Header.Add("authorization", "Bearer "+tok)
-	r.Header.Set("host",endpoint)
+	r.Header.Set("host", endpoint)
+	r.Header.Del("accept-encoding")
 
 	fmt.Println(r.URL)
 	// TODO(ahmetb) implement this as a proper http reverse proxy
@@ -111,8 +115,16 @@ func reverseProxy(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(resp.StatusCode)
 
 	if resp.Body != nil {
+		defer resp.Body.Close()
+
+		// handle Table responses
+		if resp.StatusCode == http.StatusOK &&
+			strings.Contains(path, "/services") &&
+			strings.Contains(r.Header.Get("accept"),";as=Table"){
+			tableHandler(w, resp.Body)
+			return
+		}
 		io.Copy(w, resp.Body)
-		resp.Body.Close()
 	}
 }
 
@@ -120,4 +132,34 @@ func getAccessToken() (string, error) {
 	cmd := exec.Command("gcloud", "auth", "print-access-token", "-q")
 	b, err := cmd.Output()
 	return strings.TrimSuffix(string(b), "\n"), err
+}
+
+type KubernetesAPIError struct {
+	Kind       string `json:"kind"`
+	APIVersion string `json:"apiVersion"`
+	Metadata   struct {
+	} `json:"metadata"`
+	Status  string `json:"status"`
+	Message string `json:"message"`
+	Reason  string `json:"reason"`
+	Details struct {
+		Name  string `json:"name"`
+		Group string `json:"group"`
+		Kind  string `json:"kind"`
+	} `json:"details"`
+	Code int `json:"code"`
+}
+
+func writeAPIError(w http.ResponseWriter, code int, message string) {
+	v := KubernetesAPIError{
+		Kind:       "Status",
+		APIVersion: "v1",
+		Code:       code,
+		Message:    message,
+		Status:     "Failure",
+		Reason:     strings.ReplaceAll(http.StatusText(code), " ", ""),
+	}
+	w.Header().Set("content-type", "application/json")
+	w.WriteHeader(code)
+	json.NewEncoder(w).Encode(v)
 }
