@@ -1,0 +1,36 @@
+{
+    "kind": "APIResourceList",
+    "apiVersion": "v1",
+    "groupVersion": "domains.cloudrun.com/v1alpha1",
+    "resources": [
+      {
+        "name": "domainmappings",
+        "singularName": "domainmapping",
+        "namespaced": true,
+        "kind": "DomainMapping",
+        "verbs": [
+          "delete",
+          "deletecollection",
+          "get",
+          "list",
+          "patch",
+          "create",
+          "update"
+        ],
+        "categories": [
+          "all"
+        ]
+      },
+      {
+        "name": "domainmappings/status",
+        "singularName": "",
+        "namespaced": true,
+        "kind": "DomainMapping",
+        "verbs": [
+          "get",
+          "patch",
+          "update"
+        ]
+      }
+    ]
+  }

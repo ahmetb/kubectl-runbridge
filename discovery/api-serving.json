@@ -1,0 +1,127 @@
+{
+    "kind": "APIResourceList",
+    "apiVersion": "v1",
+    "groupVersion": "serving.knative.dev/v1",
+    "resources": [
+      {
+        "name": "services",
+        "singularName": "service",
+        "namespaced": true,
+        "kind": "Service",
+        "verbs": [
+          "delete",
+          "deletecollection",
+          "get",
+          "list",
+          "patch",
+          "create",
+          "update"
+        ],
+        "shortNames": [
+          "kservice",
+          "ksvc"
+        ],
+        "categories": [
+          "all",
+          "knative",
+          "serving"
+        ]
+      },
+      {
+        "name": "services/status",
+        "singularName": "",
+        "namespaced": true,
+        "kind": "Service",
+        "verbs": [
+          "get"
+        ]
+      },
+      {
+        "name": "revisions",
+        "singularName": "revision",
+        "namespaced": true,
+        "kind": "Revision",
+        "verbs": [
+          "delete",
+          "deletecollection",
+          "get",
+          "list",
+          "patch",
+          "create",
+          "update"
+        ],
+        "shortNames": [
+          "rev"
+        ],
+        "categories": [
+          "all",
+          "knative",
+          "serving"
+        ]
+      },
+      {
+        "name": "revisions/status",
+        "singularName": "",
+        "namespaced": true,
+        "kind": "Revision",
+        "verbs": [
+          "get"
+        ]
+      },
+      {
+        "name": "configurations",
+        "singularName": "configuration",
+        "namespaced": true,
+        "kind": "Configuration",
+        "verbs": [
+          "get",
+          "list"
+        ],
+        "shortNames": [
+          "config",
+          "cfg"
+        ],
+        "categories": [
+          "all",
+          "knative",
+          "serving"
+        ]
+      },
+      {
+        "name": "configurations/status",
+        "singularName": "",
+        "namespaced": true,
+        "kind": "Configuration",
+        "verbs": [
+          "get"
+        ]
+      },
+      {
+        "name": "routes",
+        "singularName": "route",
+        "namespaced": true,
+        "kind": "Route",
+        "verbs": [
+          "get",
+          "list"
+        ],
+        "shortNames": [
+          "rt"
+        ],
+        "categories": [
+          "all",
+          "knative",
+          "serving"
+        ]
+      },
+      {
+        "name": "routes/status",
+        "singularName": "",
+        "namespaced": true,
+        "kind": "Route",
+        "verbs": [
+          "get"
+        ]
+      }
+    ]
+  }

@@ -1,0 +1,32 @@
+{
+    "kind": "APIGroupList",
+    "apiVersion": "v1",
+    "groups": [
+      {
+        "name": "serving.knative.dev",
+        "versions": [
+          {
+            "groupVersion": "serving.knative.dev/v1",
+            "version": "v1"
+          }
+        ],
+        "preferredVersion": {
+          "groupVersion": "serving.knative.dev/v1",
+          "version": "v1"
+        }
+      },
+      {
+        "name": "domains.cloudrun.com",
+        "versions": [
+          {
+            "groupVersion": "domains.cloudrun.com/v1alpha1",
+            "version": "v1alpha1"
+          }
+        ],
+        "preferredVersion": {
+          "groupVersion": "domains.cloudrun.com/v1alpha1",
+          "version": "v1alpha1"
+        }
+      }
+    ]
+  }
