@@ -19,8 +19,8 @@ import (
 var (
 	// TODO(ahmetb) bundle these into the binary
 	discoveryDocs = map[string]string{
-		"":                               "discovery/apis.json",
-		"/serving.knative.dev/v1":        "discovery/api-serving.json",
+		"":                         "discovery/apis.json",
+		"/serving.knative.dev/v1":  "discovery/api-serving.json",
 		"/domains.cloudrun.com/v1": "discovery/api-domains.json",
 	}
 )
@@ -36,7 +36,6 @@ func main() {
 		os.Exit(1)
 	}
 	tokenSource = ts
-
 
 	r := mux.NewRouter()
 	r.HandleFunc("/{region}/api/v1", baseAPIv1).Methods(http.MethodGet, http.MethodHead)
@@ -132,12 +131,24 @@ func reverseProxy(w http.ResponseWriter, r *http.Request) {
 	if resp.Body != nil {
 		defer resp.Body.Close()
 
-		// handle Table responses
 		if resp.StatusCode == http.StatusOK &&
-			strings.Contains(path, "/services") &&
 			strings.Contains(r.Header.Get("accept"), ";as=Table") {
-			tableHandler(w, resp.Body)
-			return
+
+			converters := map[string]func(io.Reader) TableResponse{
+				"/services":       ksvcTableConvert,
+				"/configurations": configurationTableConvert,
+				"/routes":         routeTableConvert,
+				"/revisions":      revisionTableConvert,
+				"/domainmappings": domainMappingTableConvert,
+			}
+			for suffix, converter := range converters {
+				if strings.HasSuffix(path, suffix) {
+					tr := converter(resp.Body)
+					_ = json.NewEncoder(w).Encode(tr)
+					return
+				}
+			}
+			panic(fmt.Sprintf("no list->table response converter found for %s", path))
 		} else if r.Method == http.MethodDelete && resp.StatusCode == http.StatusOK {
 			fixDeleteResponse(w, resp.Body)
 			return

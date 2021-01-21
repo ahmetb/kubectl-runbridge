@@ -2,8 +2,8 @@
 
 > :warning: :warning: This project is under heavy development.
 
-This is a small binary that offers Cloud Run functionality (as Knative APIs)
-using `kubectl`.
+This is a small binary that lets you work with Cloud Run API
+using `kubectl` because Cloud Run is Knative API-compliant.
 
 Start a local server at port `5555`:
 
@@ -21,7 +21,7 @@ go run .
     - [ ] Route
     - [ ] Revision
     - [ ] DomainMapping
-- [x] Deleting resources with `kubectl gelete`
+- [x] Deleting resources with `kubectl delete`
 - Updating resources
   - [ ] `kubectl edit`  (json merge patch not yet supported)
   - [ ] `kubectl apply` (json merge patch not yet supported)
