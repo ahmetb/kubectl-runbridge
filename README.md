@@ -25,6 +25,7 @@ Set this environment variable in your shell:
 - [x] `kubectl` Discovery API (`/api`, `/apis`, `/apis/serving.knative.dev/v1` etc)
 - [x] Listing/getting resources with `kubectl get`
     - [x] Server-side printing (as tables) in `kubectl get`
+- [x] Inspecting resources with `kubectl describe`
 - [x] Deleting resources with `kubectl delete`
 - [x] generating `KUBECONFIG` files automatically
 - [ ] `--all-namespaces` while querying resources (would query all regions)
