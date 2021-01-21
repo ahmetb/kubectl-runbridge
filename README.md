@@ -15,12 +15,7 @@ go run .
 
 - [x] `kubectl` Discovery API (`/api`, `/apis`, `/apis/serving.knative.dev/v1` etc)
 - [x] Listing/getting resources with `kubectl get`
-- Server-side "table" printing for `kubectl get`
-    - [x] KService 
-    - [ ] Configuration
-    - [ ] Route
-    - [ ] Revision
-    - [ ] DomainMapping
+- Server-side "table" printing in `kubectl get` w/ custom columns
 - [x] Deleting resources with `kubectl delete`
 - Updating resources
   - [ ] `kubectl edit`  (json merge patch not yet supported)

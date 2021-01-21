@@ -47,7 +47,7 @@ func main() {
 	log.Fatal(http.ListenAndServe("localhost:5555", nil))
 }
 
-func baseAPIv1(w http.ResponseWriter, r *http.Request) {
+func baseAPIv1(w http.ResponseWriter, _ *http.Request) {
 	fmt.Fprintf(w, `{
 		"kind": "APIVersions",
 		"versions": [
@@ -83,7 +83,7 @@ func discovery(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer f.Close()
-	io.Copy(w, f)
+	_, _ = io.Copy(w, f)
 }
 
 func reverseProxy(w http.ResponseWriter, r *http.Request) {
@@ -153,7 +153,7 @@ func reverseProxy(w http.ResponseWriter, r *http.Request) {
 			fixDeleteResponse(w, resp.Body)
 			return
 		}
-		io.Copy(w, resp.Body)
+		_, _ = io.Copy(w, resp.Body)
 	}
 }
 
@@ -192,7 +192,7 @@ func writeAPIError(w http.ResponseWriter, code int, message string) {
 	}
 	w.Header().Set("content-type", "application/json")
 	w.WriteHeader(code)
-	json.NewEncoder(w).Encode(v)
+	_ = json.NewEncoder(w).Encode(v)
 }
 
 func fixDeleteResponse(w http.ResponseWriter, r io.Reader) {
