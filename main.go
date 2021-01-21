@@ -70,7 +70,7 @@ func main() {
 	r.HandleFunc("/{region}/apis/{apiGroup}/{apiVersion}", discovery).Methods(http.MethodGet, http.MethodHead)
 	r.HandleFunc("/{region}/apis/{apiGroup}/{apiVersion}/namespaces/{ns}/{resource:.*}", reverseProxy)
 	r.HandleFunc("/apis/{apiGroup}/{apiVersion}/namespaces/{ns}/{resource:.*}", reverseProxy)
-	log.Println("started fake kube-apiserver for Cloud Run")
+	log.Println("Started fake kube-apiserver for Cloud Run")
 	log.Printf("Set this environment variable in your shell:\n"+
 		"\texport KUBECONFIG=%s\n\n", kubecfgFile)
 	http.Handle("/", r)
