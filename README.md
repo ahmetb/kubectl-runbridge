@@ -21,14 +21,16 @@ go run .
   - [ ] `kubectl edit`  (json merge patch not yet supported)
   - [ ] `kubectl apply` (json merge patch not yet supported)
   - [ ] `kubectl patch` (json merge patch not yet supported)
-- [ ] `--watch` (probably will never be supported)
 - [ ] `--all-namespaces` while querying resources (would query all regions)
+- [x] generating `KUBECONFIG` files automatically
+- [ ] `--watch` (probably will never be supported)
+
 
 Roadmap:
 
-- [ ] generating `KUBECONFIG` files automatically
-- [ ] showing Cloud Run regions as "Kubernetes namespaces"
+- [ ] mock Cloud Run regions as "Kubernetes namespaces" (not "contexts")
 - [ ] configuring a "GCP project" using command-line option
+
 
 ## Examples
 

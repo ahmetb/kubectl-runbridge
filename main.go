@@ -5,9 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/gorilla/mux"
@@ -23,6 +25,8 @@ var (
 		"/serving.knative.dev/v1":  "discovery/api-serving.json",
 		"/domains.cloudrun.com/v1": "discovery/api-domains.json",
 	}
+
+	kubecfgFile = filepath.Join(os.Getenv("HOME"), ".kube", "config.cloudrun")
 )
 
 var (
@@ -30,19 +34,45 @@ var (
 )
 
 func main() {
+	log.SetFlags(0)
 	ts, err := google.DefaultTokenSource(context.TODO(), run.CloudPlatformScope)
 	if err != nil {
-		log.Printf(`Google Credentials not found: Make sure you ran "gcloud auth application-default login" first. error: %v`, err)
-		os.Exit(1)
+		log.Fatalf(`Google Credentials not found: Make sure you ran "gcloud auth application-default login" first. error: %v`, err)
 	}
 	tokenSource = ts
+
+	proj, err := defaultProject()
+	if err != nil {
+		log.Fatalf("error reading default project from gcloud: %v", err)
+	}
+	if proj == "" {
+		log.Fatal("default GCP project not set on gcloud (use \"gcloud config set core/project PROJECT_ID\")")
+	}
+	log.Printf("Assuming GCP project id %q", proj)
+
+	regions, err := regions(proj)
+	if err != nil {
+		log.Fatalf("failed to fetch regions: %v", err)
+	}
+	b, err := mkKubeconfig(proj, regions)
+	if err != nil {
+		log.Fatalf("failed to create kubeconfig: %v", err)
+	}
+	if err := ioutil.WriteFile(kubecfgFile, b, 0644); err != nil {
+		log.Fatalf("failed to save kubeconfig file: %v", err)
+	}
+
+
 
 	r := mux.NewRouter()
 	r.HandleFunc("/{region}/api/v1", baseAPIv1).Methods(http.MethodGet, http.MethodHead)
 	r.HandleFunc("/{region}/apis", discovery).Methods(http.MethodGet, http.MethodHead)
 	r.HandleFunc("/{region}/apis/{apiGroup}/{apiVersion}", discovery).Methods(http.MethodGet, http.MethodHead)
 	r.HandleFunc("/{region}/apis/{apiGroup}/{apiVersion}/namespaces/{ns}/{resource:.*}", reverseProxy)
-	fmt.Println("starting fake kube-apiserver for Cloud Run")
+	r.HandleFunc("/apis/{apiGroup}/{apiVersion}/namespaces/{ns}/{resource:.*}", reverseProxy)
+	log.Println("started fake kube-apiserver for Cloud Run")
+	log.Printf("Set this environment variable in your shell:\n"+
+		"\texport KUBECONFIG=%s\n\n", kubecfgFile)
 	http.Handle("/", r)
 	log.Fatal(http.ListenAndServe("localhost:5555", nil))
 }
@@ -54,6 +84,10 @@ func baseAPIv1(w http.ResponseWriter, _ *http.Request) {
 		  "v1"
 		]
 	}`)
+}
+
+func allNamespaces(w http.ResponseWriter, _ *http.Request) {
+	writeAPIError(w, http.StatusMethodNotAllowed, "--all-namespaces not implemented")
 }
 
 func pathWithoutRegionPrefix(r *http.Request) string {
@@ -90,15 +124,15 @@ func reverseProxy(w http.ResponseWriter, r *http.Request) {
 	path := pathWithoutRegionPrefix(r) // e.g. /apis/serving.knative.dev/v1/namespaces/ahmetb-demo/services/foo
 	region := mux.Vars(r)["region"]
 
-	if r.URL.Query().Get("watch") != "" {
-		writeAPIError(w, http.StatusBadRequest, "--watch not supported")
-		return
-	}
-
 	tok, err := getAccessToken()
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprintf(w, "failed to get access_token: %v", err)
+		return
+	}
+
+	if r.URL.Query().Get("watch") != "" {
+		writeAPIError(w, http.StatusBadRequest, "--watch not supported")
 		return
 	}
 
@@ -109,6 +143,7 @@ func reverseProxy(w http.ResponseWriter, r *http.Request) {
 	r.RequestURI = ""
 	r.Host = endpoint
 	r.RemoteAddr = ""
+	r.Header.Set("user-agent", "github.com/ahmetb/kubectl-runbridge")
 	r.Header.Add("authorization", "Bearer "+tok)
 	r.Header.Set("host", endpoint)
 	r.Header.Del("accept-encoding")
